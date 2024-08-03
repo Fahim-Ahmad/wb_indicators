@@ -1,5 +1,7 @@
 *_ignore*
 .DS_Store
+*.Rproj*
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
