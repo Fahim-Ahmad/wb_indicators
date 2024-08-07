@@ -62,7 +62,7 @@ server <- function(input, output, session){
     column(10, offset = 1,
            markdown("I have developed this app for learning purposes only.\n
             It takes a country name (or two or more than two countries for comparison purposes) as input and returns the most recent values of social, economic, and environmental indicators from the World Bank (https://data.worldbank.org/country).
-            The source code is publicly available on my [GitHub](https://github.com/Fahim-Ahmad/wb_indicators) account for anyone who is interested.")
+            The source code is publicly available on my [GitHub](https://github.com/Fahim-Ahmad/wb_indicators/tree/r-shiny) account for anyone who is interested.")
            )
   })
   
