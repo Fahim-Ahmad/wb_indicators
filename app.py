@@ -1,169 +1,153 @@
+# required packages
 import streamlit as st
 import requests
 from bs4 import BeautifulSoup
 
 st.set_page_config(layout="wide")
 
+# custom functions
+def fetch_data(country):
+    url = f'https://data.worldbank.org/country/{country}'
+    page = requests.get(url)
+    contents = BeautifulSoup(page.text, 'html.parser')
+    indicator_items = contents.select('.indicator-item')
+
+    dt = {country: {}}
+    for i in indicator_items:
+        type = i.find('h1').text.strip()
+
+        i_inner = i.find_all(class_='indicator-item__inner')
+        for ii in i_inner:
+            name = ii.find('div', class_='indicator-item__title')
+            value = ii.find('div', class_='indicator-item__data-info')
+            year = ii.find('p', class_='indicator-item__data-info-year')
+            href = ii.find('a')
+            
+            name = '' if name is None else name.text.strip()
+            value = 'No data available' if value is None else value.text.strip()
+            year = '' if year is None else year.text.strip()
+            href = '' if href is None else f"https://data.worldbank.org{href.get('href')}"
+
+            if name in ['GDP (current US$)current US$constant US$current LCUconstant LCU', 'GDP per capita (current US$)current US$constant US$current LCUconstant LCU']:
+                    name = name[:name.find('$')].strip()+'$)'
+            
+            dt[country][name] = {'type': type, 'value': value, 'year': year, 'href': href}
+
+    return(dt)
+
+# df = fetch_data('afghanistan')
+# df = {}
+# for country in ["Afghanistan", "Algeria", "Andorra", "American-Samoa"]:
+#     df.update(fetch_data(country))
+
+def display_data(df, category):
+    text = ""
+
+    for cnt in df.keys():
+        sub_df = df[cnt]
+        
+        if (len(df.keys())) > 1:
+            text = f"{text}<div><h4 class='country-name'>{cnt}</h4>"
+        else:
+            text = f"{text}<div>"
+
+        text = f"{text}<ul>"
+
+        for ind in sub_df.keys():
+            if sub_df[ind]['type'] == category:
+            
+                name = f"<span class='indicator-name'>{ind}</span>"
+                year = f"<span class='year'>{sub_df[ind]['year']}</span>"
+                value = sub_df[ind]['value']
+                href = sub_df[ind]['href']
+                
+                source = f"[<span class='href'><a href='{href}'>source</a></span>]" if value != "No data available" else ''
+                value = f"<span class='value'>{value}</span>" if value != "No data available" else "<span class='no-data'>No data available</span>"
+
+                text = f"{text} <li>{name} {source}<br>{value} {year if value != 'No data available' else ''} </li>"
+
+        text = f"{text}</ul></div>"
+    
+    return(text)
+
+# display_data(df, 'Social')
+# display_data({'Afghanistan': df['Afghanistan']}, 'Social')
+
+# custom styling
+st.markdown(
+    """
+    <style>
+    .box {
+        max-height: 40vh;
+        overflow-y: auto;
+    }
+
+    .value {
+        font-size: 24px;
+        font-weight: bold;
+    }
+    
+    .no-data {
+        color: orange;
+    }
+    </style>
+    """, 
+    unsafe_allow_html=True
+)
+
+box = """
+    <div class="box">
+        {content}
+    </div>
+"""
+
+# streamlit
+
 countries_page = requests.get('https://data.worldbank.org/country')
 countries_contents = BeautifulSoup(countries_page.text, 'html.parser')
 countries = countries_contents.select('section.nav-item > ul > li')
 countries = [country.text.strip() for country in countries]
 
-def fetch_data(url):
+col1, col2, col3 = st.columns([2, 3, 2])
+with col2:
+    countries = st.multiselect('', countries,  key='countries')
+    countries = [country.replace(" ", "-") for country in countries]
+    fetch_btn = st.button("Fetch")
 
-    dt = {
-    # Social
-    'Poverty headcount ratio at $2.15 a day (2017 PPP) (% of population)' : {'type': 'Social', 'value': '', 'year': '', 'href': ''},
-    'Life expectancy at birth, total (years)' : {'type': 'Social', 'value': '', 'year': '', 'href': ''},
-    'Population, total' : {'type': 'Social', 'value': '', 'year': '', 'href': ''},
-    'Population growth (annual %)' : {'type': 'Social', 'value': '', 'year': '', 'href': ''},
-    'Net migration' : {'type': 'Social', 'value': '', 'year': '', 'href': ''},
-    'Human Capital Index (HCI) (scale 0-1)' : {'type': 'Social', 'value': '', 'year': '', 'href': ''},
-
-    # 'Economic'
-    'GDP (current US$)': {'type': 'Economic', 'value': '', 'year': '', 'href': ''},
-    'GDP per capita (current US$)' : {'type': 'Economic', 'value': '', 'year': '', 'href': ''},
-    'GDP growth (annual %)' : {'type': 'Economic', 'value': '', 'year': '', 'href': ''},
-    'Unemployment, total (% of total labor force) (modeled ILO estimate)' : {'type': 'Economic', 'value': '', 'year': '', 'href': ''},
-    'Inflation, consumer prices (annual %)' : {'type': 'Economic', 'value': '', 'year': '', 'href': ''},
-    'Personal remittances, received (% of GDP)' : {'type': 'Economic', 'value': '', 'year': '', 'href': ''},
-
-    # 'Environment'
-    'CO2 emissions (metric tons per capita)' : {'type': 'Environment', 'value': '', 'year': '', 'href':''},
-    'Forest area (% of land area)' : {'type': 'Environment', 'value': '', 'year': '', 'href':''},
-    'Access to electricity (% of population)' : {'type': 'Environment', 'value': '', 'year': '', 'href':''},
-    'Annual freshwater withdrawals, total (% of internal resources)' : {'type': 'Environment', 'value': '', 'year': '', 'href':''},
-    'Electricity production from renewable sources, excluding hydroelectric (% of total)' : {'type': 'Environment', 'value': '', 'year': '', 'href':''},
-    'People using safely managed sanitation services (% of population)' : {'type': 'Environment', 'value': '', 'year': '', 'href':''},
-
-    # 'Institutions'
-    'Intentional homicides (per 100,000 people)': {'type': 'Institutions', 'value': '', 'year': '', 'href': ''},
-    'Central government debt, total (% of GDP)': {'type': 'Institutions', 'value': '', 'year': '', 'href': ''},
-    'Statistical performance indicators (SPI): Overall score (scale 0-100)': {'type': 'Institutions', 'value': '', 'year': '', 'href': ''},
-    'Individuals using the Internet (% of population)': {'type': 'Institutions', 'year': '', 'value': '', 'href': ''},
-    'Proportion of seats held by women in national parliaments (%)': {'type': 'Institutions', 'value': '', 'year': '', 'href': ''},
-    'Foreign direct investment, net inflows (% of GDP)': {'type': 'Institutions', 'value': '', 'year': '', 'href': ''},
-    }
-
-    page = requests.get(url)
-    contents = BeautifulSoup(page.text, 'html.parser')
-    indicators = contents.select('.indicator-item > .indicator-item__wrapper > .indicator-item__inner')
+if fetch_btn and len(countries)>0:
     
-    for i in indicators:
-        indicator_name = i.find('div', class_='indicator-item__title')
-        indicator_value = i.find('div', class_='indicator-item__data-info')
-        indicator_year = i.find('p', class_='indicator-item__data-info-year')
-
-        indicator_name = indicator_name.text.strip()
-        indicator_value = 'No data available' if indicator_value is None else indicator_value.text.strip()
-        indicator_year = None if indicator_year is None else indicator_year.text.strip()
-
-        href = i.find('a').get('href')
-        href = 'https://data.worldbank.org' + href
-
-        if indicator_name in ['GDP (current US$)current US$constant US$current LCUconstant LCU', 'GDP per capita (current US$)current US$constant US$current LCUconstant LCU']:
-            indicator_name = indicator_name[:indicator_name.find('$')].strip()+'$)'
-
-        dt[indicator_name]['value'] = indicator_value
-        dt[indicator_name]['year'] = indicator_year
-        dt[indicator_name]['href'] = href
-
-    return dt
-
-
-def display_data(data, country, type):
-    for ind in data[country]:
-        if data[country][ind]['type'] == type:
-            value = data[country][ind]['value']
-            year = data[country][ind]['year']
-            href = ' - [source](' + data[country][ind]['href'] + ')' if value != 'No data available' else ''
-            
-            st.markdown(f"- {ind} {href} \n {value} {'' if year is None else year}")
-
-country1 = st.sidebar.selectbox("Please select a country name", countries, key='country1')
-url1 = f"https://data.worldbank.org/country/{country1}"
-
-compare_country = st.sidebar.checkbox('Compare Countries', value=False)
-
-country2 = None
-if compare_country:
-    country2 = st.sidebar.selectbox("Please select a country name", countries, key='country2')
-    url2 = f"https://data.worldbank.org/country/{country2}"
-
-
-if st.sidebar.button("Submit"):
-    data = {country1: ''}
-
-    if country2:
-
-        if country2 == country1:
-            st.error('Please make sure to select two different country names')
-        else:
-            data[country1] = fetch_data(url1)
-            data[country2] = fetch_data(url1)
-
-            col1, col2 = st.columns(2)
-            with col1:
-                st.header(country1)
-
-                st.subheader('Social')
-                display_data(data, country1, 'Social')
-
-                st.header('Environment')
-                display_data(data, country1, 'Environment')
-
-                st.header('Economic')
-                display_data(data, country1, 'Economic')
-
-                st.header('Institutions')
-                display_data(data, country1, 'Institutions')
-            with col2:
-                st.header(country2)
-
-                st.subheader('Social')
-                display_data(data, country2, 'Social')
-
-                st.header('Environment')
-                display_data(data, country2, 'Environment')
-
-                st.header('Economic')
-                display_data(data, country2, 'Economic')
-
-                st.header('Institutions')
-                display_data(data, country2, 'Institutions')
-            
-            with st.expander('Data in json format:'):
-                st.json(data)
-
-    else:
-        data[country1] = fetch_data(url1)
-
-        col1, col2 = st.columns(2)
-
-        with col1:
-            st.header('Social')
-            display_data(data, country1, 'Social')
-
-            st.write('----------------------------------------------------------------')
-            st.header('Environment')
-            display_data(data, country1, 'Environment')
-
-        with col2:
-            st.header('Economic')
-            display_data(data, country1, 'Economic')
-
-            st.write('----------------------------------------------------------------')
-            st.header('Institutions')
-            display_data(data, country1, 'Institutions')
+    df = {}
+    for country in countries:
+        df.update(fetch_data(country))
     
-        with st.expander('Data in json format:'):
-            st.json(data)
+    # st.json(df)
+
+    col1, col2 = st.columns(2)
+    with col1:
+        with st.container():
+            with st.expander('Social', expanded=True):
+                # st.markdown(display_data(df, 'Social'), unsafe_allow_html=True)
+                st.markdown(f"<div class='box'>{display_data(df, 'Social')}</div>", unsafe_allow_html=True)
+
+        with st.container():
+            with st.expander('Environment', expanded=True):
+                st.markdown(f"<div class='box'>{display_data(df, 'Environment')}</div>", unsafe_allow_html=True)
+
+    with col2:
+        with st.container():
+            with st.expander('Economic', expanded=True):
+                st.markdown(f"<div class='box'>{display_data(df, 'Economic')}</div>", unsafe_allow_html=True)
+        
+        with st.container():
+            with st.expander('Institutions', expanded=True):
+                st.markdown(f"<div class='box'>{display_data(df, 'Institutions')}</div>", unsafe_allow_html=True)
 
 else:
-    with st.expander('---', expanded=True):
+    with st.expander('', expanded=True):
         st.markdown(
             """
-            I have developed this app for learning purposes only.\n
+            Hello, my name is Fahim.\n
+            I have developed this app for learning purposes only.
             It takes a country name (or two countries for comparison purposes) as input and returns the most recent values of social, economic, and environmental indicators from the World Bank (https://data.worldbank.org/country).\n
             The source code is publicly available on my [GitHub](https://github.com/Fahim-Ahmad/wb_indicators) account for anyone who is interested.
             """
