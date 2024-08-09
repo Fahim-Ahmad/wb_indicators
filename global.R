@@ -30,6 +30,9 @@ fetch_data <- function(country) {
     
     for (ii in i_inner) {
       name <- ii %>% html_nodes('div.indicator-item__title') %>% html_text()
+      if (name %in% c("GDP (current US$)current US$constant US$current LCUconstant LCU", "GDP per capita (current US$)current US$constant US$current LCUconstant LCU")){
+        name = sub(").*", ")", name)
+      }
       
       value <- ii %>% html_nodes('div.indicator-item__data-info') %>% html_text()
       value <- ifelse(length(value) == 0, "No data available", value)
