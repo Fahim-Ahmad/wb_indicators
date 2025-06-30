@@ -9,6 +9,60 @@ countries <- countries %>%
   html_text() #%>% 
   # gsub(" ", "-", .)
 
+# test
+# contents <- read_html(glue::glue('https://data.worldbank.org/country/{"Afghanistan"}'))
+# indicator_items <- contents %>% html_nodes('.indicator-item')
+# 
+# indicator_items[1] |> html_nodes('h2')
+# 
+# data_df <- data.frame(
+#   type = character(),
+#   name = character(),
+#   href = character(),
+#   value = character(),
+#   year = character(),
+#   stringsAsFactors = FALSE
+# )
+# 
+# for (i in indicator_items) {
+#   type <- i %>% html_nodes('h2') %>% html_text()
+#   # print(type)
+#   
+#   i_inner <- i %>% html_nodes('.indicator-item__wrapper > .indicator-item__inner')
+#   # print(i_inner)
+#   
+#   for (ii in i_inner) {
+#     name <- ii %>% html_nodes('div.indicator-item__title') %>% html_text()
+#     if (name %in% c("GDP (current US$)current US$constant US$current LCUconstant LCU", "GDP per capita (current US$)current US$constant US$current LCUconstant LCU")){
+#       name = sub(").*", ")", name)
+#     }
+# 
+#     value <- ii %>% html_nodes('div.indicator-item__data-info') %>% html_text()
+#     value <- ifelse(length(value) == 0, "No data available", value)
+# 
+#     year <- ii %>% html_nodes('p.indicator-item__data-info-year') %>% html_text()
+#     year <- ifelse(length(value) == 0, NA_character_, year)
+# 
+#     href <- ii %>% html_node('div.indicator-item__title > a') %>% html_attr('href')
+#     href <- glue::glue("https://data.worldbank.org{href}")
+# 
+#     new_row <- data.frame(
+#       type = type,
+#       name = name,
+#       href = href,
+#       value = value,
+#       year = year,
+#       stringsAsFactors = FALSE
+#     )
+# 
+#     data_df <- bind_rows(data_df, new_row)
+#   }
+#   
+# }
+# 
+# data_df
+
+# custom function to wrap-up the above commands
 fetch_data <- function(country) {
   
   data_df <- data.frame(
@@ -24,7 +78,7 @@ fetch_data <- function(country) {
   indicator_items <- contents %>% html_nodes('.indicator-item')
   
   for (i in indicator_items) {
-    type <- i %>% html_nodes('h1') %>% html_text()
+    type <- i %>% html_nodes('h2') %>% html_text()
     
     i_inner <- i %>% html_nodes('.indicator-item__wrapper > .indicator-item__inner')
     
@@ -60,6 +114,7 @@ fetch_data <- function(country) {
   data_df <- data_df %>% mutate(country = country)
   return(data_df)
 }
+
 
 # df <- fetch_data('afghanistan')
 # df = data.frame()
