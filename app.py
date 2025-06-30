@@ -14,7 +14,7 @@ def fetch_data(country):
 
     dt = {country: {}}
     for i in indicator_items:
-        type = i.find('h1').text.strip()
+        type = i.find('h2').text.strip()
 
         i_inner = i.find_all(class_='indicator-item__inner')
         for ii in i_inner:
