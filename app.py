@@ -119,28 +119,56 @@ if fetch_btn and len(countries)>0:
     df = {}
     for country in countries:
         df.update(fetch_data(country))
-    
+
+    if len(df)<1:
+        st.markdown("Can't fetch the data. Please try again later!")
+    else:
+        # st.json(df)
+
+        col1, col2 = st.columns(2)
+        with col1:
+            with st.container():
+                with st.expander('Social', expanded=True):
+                    st.markdown(f"<div class='box'>{display_data(df, 'Social')}</div>", unsafe_allow_html=True)
+
+            with st.container():
+                with st.expander('Environment', expanded=True):
+                    st.markdown(f"<div class='box'>{display_data(df, 'Environment')}</div>", unsafe_allow_html=True)
+            
+        with col2:
+            with st.container():
+                with st.expander('Economic', expanded=True):
+                    st.markdown(f"<div class='box'>{display_data(df, 'Economic')}</div>", unsafe_allow_html=True)
+                
+            with st.container():
+                with st.expander('Institutions', expanded=True):
+                    st.markdown(f"<div class='box'>{display_data(df, 'Institutions')}</div>", unsafe_allow_html=True)
+
+        
+    # df = {}
+    # for country in countries:
+    #     df.update(fetch_data(country))
     # st.json(df)
 
-    col1, col2 = st.columns(2)
-    with col1:
-        with st.container():
-            with st.expander('Social', expanded=True):
-                # st.markdown(display_data(df, 'Social'), unsafe_allow_html=True)
-                st.markdown(f"<div class='box'>{display_data(df, 'Social')}</div>", unsafe_allow_html=True)
+    # col1, col2 = st.columns(2)
+    # with col1:
+    #     with st.container():
+    #         with st.expander('Social', expanded=True):
+    #             # st.markdown(display_data(df, 'Social'), unsafe_allow_html=True)
+    #             st.markdown(f"<div class='box'>{display_data(df, 'Social')}</div>", unsafe_allow_html=True)
 
-        with st.container():
-            with st.expander('Environment', expanded=True):
-                st.markdown(f"<div class='box'>{display_data(df, 'Environment')}</div>", unsafe_allow_html=True)
+    #     with st.container():
+    #         with st.expander('Environment', expanded=True):
+    #             st.markdown(f"<div class='box'>{display_data(df, 'Environment')}</div>", unsafe_allow_html=True)
 
-    with col2:
-        with st.container():
-            with st.expander('Economic', expanded=True):
-                st.markdown(f"<div class='box'>{display_data(df, 'Economic')}</div>", unsafe_allow_html=True)
+    # with col2:
+    #     with st.container():
+    #         with st.expander('Economic', expanded=True):
+    #             st.markdown(f"<div class='box'>{display_data(df, 'Economic')}</div>", unsafe_allow_html=True)
         
-        with st.container():
-            with st.expander('Institutions', expanded=True):
-                st.markdown(f"<div class='box'>{display_data(df, 'Institutions')}</div>", unsafe_allow_html=True)
+    #     with st.container():
+    #         with st.expander('Institutions', expanded=True):
+    #             st.markdown(f"<div class='box'>{display_data(df, 'Institutions')}</div>", unsafe_allow_html=True)
 
 else:
     with st.expander('', expanded=True):
